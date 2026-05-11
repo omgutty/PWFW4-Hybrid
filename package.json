@@ -1,0 +1,35 @@
+{
+  "name": "playwright-ts-framework",
+  "version": "1.0.0",
+  "description": "Enterprise Playwright TypeScript automation framework",
+  "type": "commonjs",
+  "scripts": {
+    "test":                  "npx playwright test --headed --project=chromium",
+    "smoke":                 "npm run report:clean && npx playwright test tests/LoginTest.spec.ts tests/RegistrationTest.spec.ts && npm run report:generate",
+    "smoke:headed":          "npm run report:clean && npx playwright test tests/LoginTest.spec.ts tests/RegistrationTest.spec.ts --headed && npm run report:generate",
+    "smoke:chrome":          "npm run report:clean && npx playwright test tests/LoginTest.spec.ts tests/RegistrationTest.spec.ts --project=chromium && npm run report:generate",
+    "smoke:firefox":         "npm run report:clean && npx playwright test tests/LoginTest.spec.ts tests/RegistrationTest.spec.ts --project=firefox && npm run report:generate",
+    "smoke:stag":            "cross-env ENV=STAG npm run smoke",
+    "regression":            "npm run report:clean && npx playwright test tests/CategoryTest.spec.ts tests/CourseTest.spec.ts && npm run report:generate",
+    "regression:headed":     "npm run report:clean && npx playwright test tests/CategoryTest.spec.ts tests/CourseTest.spec.ts --headed && npm run report:generate",
+    "regression:stag":       "cross-env ENV=STAG npm run regression",
+    "report:clean":          "npx rimraf allure-results",
+    "report:generate":       "cp -r reports/history allure-results/history 2>/dev/null || true && allure generate allure-results --clean -o reports",
+    "report:open":           "allure open reports"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^20.0.0",
+    "allure-playwright": "^3.0.0",
+    "allure-commandline": "^2.30.0",
+    "cross-env": "^7.0.3",
+    "rimraf": "^5.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  }
+}
+

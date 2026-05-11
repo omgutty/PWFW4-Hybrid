@@ -1,0 +1,25 @@
+# dotenv — environment variable loading
+npm install dotenv
+
+# cross-env — cross-platform ENV variable syntax for npm scripts
+npm install --save-dev cross-env
+
+# allure reporter
+npm install --save-dev allure-playwright
+
+# allure CLI (for generating HTML reports)
+npm install --save-dev allure-commandline
+
+# TypeScript types (usually auto-installed, but ensure they're present)
+npm install --save-dev @types/node
+
+--tsconfig.json--
+// --- IGNORE ---
+// Why these choices:
+// "strict": true — catches null/undefined errors, missing types, implicit any. 
+// This is the entire reason you moved to TypeScript. Never disable this.
+// "resolveJsonModule": true — allows import data from './testdata/course.json'
+// without any special syntax (replaces the assert { type: "json" } workaround from the JS version)
+// "module": "commonjs" — Playwright's runner works best with CommonJS output even when source is TypeScript ESM-style. 
+// The TypeScript compiler handles the translation.
+// paths — enables clean imports like import { BasePage } from '@pages/BasePage' instead of ../../pages/BasePage
