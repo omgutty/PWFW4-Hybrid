@@ -43,17 +43,18 @@ export default defineConfig({
   workers: process.env['CI'] ? 1 : undefined,
 
   // Dual reporting: allure for trend analysis, html for quick local review
-  reporter: [
+  reporter: [ 
     ['allure-playwright', {
       outputFolder: 'allure-results',
       suiteTitle:   'Automation Test Report',
     }],
-    ['html', { open: 'never' }],
+    ['html', { outputFolder: 'reports/html' }],
     ['list'],  // shows test names in terminal as they run
   ],
 
   use: {
     baseURL,
+      headless: process.env['CI'] ? true : false,
      screenshot: 'on',
     // Traces, screenshots, and video — only captured on failure to save disk space
     trace:      'on-first-retry',
@@ -77,13 +78,13 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
   ],
 });

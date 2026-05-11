@@ -23,3 +23,15 @@ npm install --save-dev @types/node
 // "module": "commonjs" — Playwright's runner works best with CommonJS output even when source is TypeScript ESM-style. 
 // The TypeScript compiler handles the translation.
 // paths — enables clean imports like import { BasePage } from '@pages/BasePage' instead of ../../pages/BasePage
+
+
+Pending -TODO
+- Report integration 
+- Logger implimentation 
+- Script path adding for running - DONE
+- Environment URL separattion 
+- git ignor the Base  URL is it safe ? 
+- how jenkins will get the URL if we are ignoring the Base URL ?
+- GitHub Actions run 
+- Allure reporter
+- Multiple pages and page navigations

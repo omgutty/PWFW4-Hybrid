@@ -1,6 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+// randomEmail
+// randomNumber
+// readCSV
+// readExcel
+// readJSON
+
+/**
+ What NOT to put in utils
+❌ Playwright locators
+❌ Page logic
+❌ Assertions
+
+Keep utils pure + stateless
+ */
+
 /**
  * Generates a unique email address using a prefix and current timestamp.
  * Use for registration tests to avoid duplicate email conflicts.
