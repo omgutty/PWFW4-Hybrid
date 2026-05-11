@@ -43,14 +43,17 @@ export default defineConfig({
   workers: process.env['CI'] ? 1 : undefined,
 
   // Dual reporting: allure for trend analysis, html for quick local review
-  reporter: [ 
-    ['allure-playwright', {
-      outputFolder: 'allure-results',
-      suiteTitle:   'Automation Test Report',
-    }],
-    ['html', { outputFolder: 'reports/html' }],
-    ['list'],  // shows test names in terminal as they run
-  ],
+  reporter: [
+  ['allure-playwright', {
+    outputFolder: 'allure-results',
+    suiteTitle:   'Automation Test Report',
+  }],
+  ['html', { 
+    outputFolder: 'playwright-report',  // ← use default folder name
+    open: 'never'                       // ← write to disk, don't auto-serve
+  }],
+  ['list'],
+],
 
   use: {
     baseURL,
