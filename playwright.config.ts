@@ -54,10 +54,10 @@ export default defineConfig({
 
   use: {
     baseURL,
-
+     screenshot: 'on',
     // Traces, screenshots, and video — only captured on failure to save disk space
     trace:      'on-first-retry',
-    screenshot: 'only-on-failure',
+   
     video:      'retain-on-failure',
 
     // Default timeout for actions (click, fill, etc.)
