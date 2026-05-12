@@ -7,9 +7,6 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   smoke-headless-chrome:
     runs-on: ubuntu-latest
@@ -30,24 +27,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Chromium + system dependencies
+      - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
       - name: Install Allure CLI
         run: npm install -g allure-commandline
 
-      - name: Create config/.env from secrets
-  env:
-    QAENV_URL:      ${{ secrets.QAENV_URL || 'https://freelance-learn-automation.vercel.app' }}
-    STAG_URL:       ${{ secrets.STAG_URL  || 'https://learn-automation.com' }}
-    ADMIN_EMAIL:    ${{ secrets.ADMIN_EMAIL }}
-    ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-  run: |
-    mkdir -p config
-    printf 'QAENV=%s\nSTAG=%s\nADMIN_EMAIL=%s\nADMIN_PASSWORD="%s"\n' \
-      "$QAENV_URL" "$STAG_URL" "$ADMIN_EMAIL" "$ADMIN_PASSWORD" > config/.env
+      - name: Create config env file
+        run: |
+          mkdir -p config
+          echo "QAENV=${{ secrets.QAENV_URL || 'https://freelance-learn-automation.vercel.app' }}" > config/.env
+          echo "STAG=${{ secrets.STAG_URL || 'https://learn-automation.com' }}" >> config/.env
+          echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> config/.env
+          echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> config/.env
 
-      - name: Run smoke tests (headless Chrome)
+      - name: Run smoke tests
         run: npm run smoke:chrome
 
       - name: Upload Playwright HTML report
@@ -58,12 +52,12 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-      - name: Upload Allure report
+      - name: Upload Allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report
-          path: reports/
+          name: allure-results
+          path: allure-results/
           retention-days: 14
 
       - name: Upload test failure artifacts
