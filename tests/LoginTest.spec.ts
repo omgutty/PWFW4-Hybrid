@@ -1,6 +1,8 @@
 import { test, expect } from '../fixtures/fixture';
 import { Credentials } from '../testdata/types';
-import credentials from '../testdata/credentials.json';
+//import credentials from '../testdata/credentials.json';
+import { credentials } from '../testdata/credentials'
+
 
 // Type assertion — confirms the JSON shape matches our interface
 const creds = credentials as Credentials;
@@ -11,7 +13,6 @@ test.describe('Login tests',()=>{
     await loginPage.goto('/login');
     await loginPage.loginToApplication(creds.username, creds.password);
     await loginPage.assertUrlContains(/Index/);
-    
     await loginPage.wait();
   });
 
