@@ -1,9 +1,9 @@
-import { Page,Locator } from "@playwright/test";
+import { Page,Locator ,expect} from "@playwright/test";
 import { BasePage } from "./BasePage";
 
 export class DashboardPage extends BasePage{
     private readonly dashboardlogo= this.page.getByText('Logo');
-    private readonly pendingtimesheet= this.page.locator(".count.pending-timesheet-leave-bg.cursor-pointer")
+    private readonly pendingtimesheet= this.page.locator('div[data-value="1"]');
     private readonly paidleave= this.page.locator(".count paid-leave-bg cursor-pointer");
     private readonly emptyleave= this.page.locator(".count empthy-leave-bg cursor-pointer");
     private readonly dashboardHeader = this.page.getByRole('heading', { name: 'Dashboard' });
@@ -24,8 +24,18 @@ export class DashboardPage extends BasePage{
     }
 
 
-    async pendingtimesheetnumber():Promise<string|null>{{
-       return await this.pendingtimesheet.textContent();
+    async pendingtimesheetnumber(): Promise<string> {
+
+    await expect(this.pendingtimesheet).toBeVisible();
+
+    return (await this.pendingtimesheet.innerText()).trim();
+    }
+
+    async paidleavenumber():Promise<string|null>{{
+       return await this.paidleave.textContent();
+    }}
+    async emptyleavenumber():Promise<string|null>{{
+       return await this.emptyleave.textContent();
     }}
     
 
