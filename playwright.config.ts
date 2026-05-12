@@ -12,13 +12,10 @@ dotenv.config({ path: path.resolve(__dirname, 'config/.env') });
 const envKey: string = process.env['ENV'] ?? 'QAENV';
 const baseURL: string | undefined = process.env[envKey];
 
-// Fail fast with a clear error instead of cryptic "navigation to undefined" failures
 if (!baseURL) {
   throw new Error(
     `\n[Config Error] ENV="${envKey}" but process.env.${envKey} is not defined.\n` +
-    `Check your config/.env file.\n` +
-    `Expected keys: QAENV, STAG, PROD\n` +
-    `Current ENV value: "${process.env['ENV'] ?? '(not set, defaulting to QAENV)'}"\n`
+    `Check your config/.env file. Expected key: QAENV\n`
   );
 }
 
