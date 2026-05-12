@@ -40,6 +40,7 @@ export class LoginPage extends BasePage {
     async loginToApplication(email: string, password: string): Promise<void> {
         await this.usernameField.fill(email);
         await this.passwordField.fill(password);
+        await this.page.waitForTimeout(4000);
         await this.loginbutton.click();
     }
 

@@ -37,15 +37,15 @@ jobs:
         run: npm install -g allure-commandline
 
       - name: Create config/.env from secrets
-      - env:
-        QAENV_URL:      ${{ secrets.QAENV_URL || 'https://freelance-learn-automation.vercel.app' }}
-        STAG_URL:       ${{ secrets.STAG_URL  || 'https://learn-automation.com' }}
-        ADMIN_EMAIL:    ${{ secrets.ADMIN_EMAIL }}
-        ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-        run: |
-          mkdir -p config
-          printf 'QAENV=%s\nSTAG=%s\nADMIN_EMAIL=%s\nADMIN_PASSWORD=%s\n' \
-          "$QAENV_URL" "$STAG_URL" "$ADMIN_EMAIL" "$ADMIN_PASSWORD" > config/.env
+  env:
+    QAENV_URL:      ${{ secrets.QAENV_URL || 'https://freelance-learn-automation.vercel.app' }}
+    STAG_URL:       ${{ secrets.STAG_URL  || 'https://learn-automation.com' }}
+    ADMIN_EMAIL:    ${{ secrets.ADMIN_EMAIL }}
+    ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+  run: |
+    mkdir -p config
+    printf 'QAENV=%s\nSTAG=%s\nADMIN_EMAIL=%s\nADMIN_PASSWORD="%s"\n' \
+      "$QAENV_URL" "$STAG_URL" "$ADMIN_EMAIL" "$ADMIN_PASSWORD" > config/.env
 
       - name: Run smoke tests (headless Chrome)
         run: npm run smoke:chrome
