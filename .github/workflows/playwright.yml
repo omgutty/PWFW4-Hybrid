@@ -33,21 +33,29 @@ jobs:
       - name: Install Allure CLI
         run: npm install -g allure-commandline
 
+      # Writing .env using Python so NO shell special character
+      # interpretation happens at all.
+      # Bash interprets ! and # even inside double quotes.
+      # Python writes the value exactly as-is — byte for byte.
       - name: Create config env file
         env:
           QAENV_URL:      ${{ secrets.QAENV_URL }}
           ADMIN_EMAIL:    ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          mkdir -p config
-          echo "QAENV=${QAENV_URL}"               > config/.env
-          echo "ADMIN_EMAIL=${ADMIN_EMAIL}"       >> config/.env
-          printf 'ADMIN_PASSWORD=%s\n' "${ADMIN_PASSWORD}" >> config/.env
+          python3 - <<'PYEOF'
+          import os, pathlib
+          pathlib.Path('config').mkdir(exist_ok=True)
+          lines = [
+            f"QAENV={os.environ['QAENV_URL']}",
+            f"ADMIN_EMAIL={os.environ['ADMIN_EMAIL']}",
+            f"ADMIN_PASSWORD={os.environ['ADMIN_PASSWORD']}",
+          ]
+          pathlib.Path('config/.env').write_text('\n'.join(lines) + '\n')
+          PYEOF
 
-      - name: Verify env file created (debug - remove after confirming)
-        run: |
-          echo "=== config/.env keys (values hidden) ==="
-          cut -d'=' -f1 config/.env
+      - name: Verify env file keys only (values never printed)
+        run: cut -d'=' -f1 config/.env
 
       - name: Run smoke tests
         run: npm run smoke:chrome
@@ -70,14 +78,6 @@ jobs:
         with:
           name: allure-report
           path: allure-report/
-          retention-days: 14
-
-      - name: Upload Allure results (raw)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results
-          path: allure-results/
           retention-days: 14
 
       - name: Upload test failure artifacts

@@ -6,7 +6,7 @@
 // and from GitHub Secrets on CI.
 
 export const credentials = {
- username: process.env['ADMIN_EMAIL']    ?? '',
+  username: process.env['ADMIN_EMAIL']    ?? '',
   password: process.env['ADMIN_PASSWORD'] ?? '',
 }
 
@@ -14,7 +14,7 @@ export const credentials = {
 // instead of failing later with a confusing "invalid login" error
 if (!credentials.username || !credentials.password) {
   throw new Error(
-    '\n[Config Error] username or password is not set.\n' +
+    '\n[Config Error] ADMIN_EMAIL or ADMIN_PASSWORD is not set.\n' +
     'Add them to config/.env\n'
   )
 }
