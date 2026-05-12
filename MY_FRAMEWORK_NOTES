@@ -1,0 +1,1095 @@
+# My Playwright TypeScript Framework — Complete Build Notes
+### Built from scratch — step by step reference
+
+---
+
+## WHAT I BUILT
+
+An enterprise-grade Playwright automation framework in TypeScript using:
+- Page Object Model (POM) design pattern
+- Fixture-based Dependency Injection
+- Data-driven testing with JSON + TypeScript interfaces
+- Environment-based configuration with dotenv
+- Dual reporting — Playwright HTML + Allure
+- GitHub Actions CI/CD pipeline
+
+**Target website:** https://cygnet.hrinnova.com/Login
+
+---
+
+## TECH STACK
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Node.js | LTS (20.x+) | JavaScript runtime |
+| TypeScript | Latest | Type-safe JavaScript |
+| Playwright | Latest | Browser automation |
+| dotenv | Latest | Environment variable loading |
+| cross-env | Latest | Cross-platform ENV variables |
+| allure-playwright | Latest | Allure test reporter |
+| allure-commandline | Latest | Generate Allure HTML report |
+| rimraf | Latest | Cross-platform folder deletion |
+
+---
+
+## FINAL FOLDER STRUCTURE
+
+```
+playwright-ts-framework/
+├── .github/
+│   └── workflows/
+│       └── playwright.yml          ← CI/CD pipeline
+├── config/
+│   ├── .env                        ← GITIGNORED — real values
+│   └── .env.example                ← Committed — documents keys needed
+├── fixtures/
+│   └── fixture.ts                  ← Dependency injection layer
+├── pages/
+│   ├── BasePage.ts                 ← Parent class — shared methods
+│   ├── LoginPage.ts                ← Login page actions
+│   ├── RegistrationPage.ts         ← Registration page actions
+│   ├── DashboardPage.ts            ← Dashboard + navigation
+│   ├── CategoryPage.ts             ← Category management (popup tab)
+│   └── CoursePage.ts               ← Course management
+├── testdata/
+│   ├── credentials.ts              ← Loads creds from process.env
+│   ├── types.ts                    ← TypeScript interfaces for data shapes
+│   ├── registration.json           ← Data-driven registration test data
+│   ├── course.json                 ← Course form test data
+│   └── SampleImage.png             ← File upload test asset
+├── tests/
+│   ├── LoginTest.spec.ts
+│   ├── RegistrationTest.spec.ts
+│   ├── CategoryTest.spec.ts
+│   └── CourseTest.spec.ts
+├── utils/
+│   └── Helper.ts                   ← Utility functions
+├── .gitignore
+├── package.json
+├── playwright.config.ts
+└── tsconfig.json
+```
+
+---
+
+## STEP 1 — PREREQUISITES
+
+### Install Node.js
+- Download LTS version from https://nodejs.org
+- Verify:
+```powershell
+node --version    # v20.x.x or higher
+npm --version     # 10.x.x or higher
+```
+
+### VS Code Extensions installed
+- Playwright Test for VSCode (Microsoft)
+- ESLint
+- Prettier
+- TypeScript Importer
+
+---
+
+## STEP 2 — PROJECT CREATION
+
+```powershell
+# Create project folder
+mkdir playwright-ts-framework
+cd playwright-ts-framework
+
+# Open in VS Code
+code .
+
+# Initialize npm
+npm init -y
+
+# Initialize Playwright with TypeScript
+npm init playwright@latest
+```
+
+### Playwright init choices made:
+- TypeScript → **Yes**
+- Tests folder → `tests`
+- GitHub Actions → **Yes**
+- Install browsers → **Yes**
+
+---
+
+## STEP 3 — INSTALL DEPENDENCIES
+
+```powershell
+npm install dotenv
+npm install --save-dev cross-env
+npm install --save-dev allure-playwright
+npm install --save-dev allure-commandline
+npm install --save-dev @types/node
+npm install --save-dev rimraf
+```
+
+---
+
+## STEP 4 — CREATE FOLDER STRUCTURE
+
+```powershell
+mkdir config
+mkdir pages
+mkdir fixtures
+mkdir testdata
+mkdir utils
+```
+
+---
+
+## STEP 5 — CONFIGURATION FILES
+
+### `tsconfig.json`
+Key settings explained:
+- `"strict": true` — catches null/undefined errors at compile time
+- `"resolveJsonModule": true` — allows importing JSON files directly
+- `"moduleResolution": "bundler"` — modern resolution, works with Playwright
+- No `baseUrl` needed — paths use `./` prefix instead
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@pages/*":    ["./pages/*"],
+      "@fixtures/*": ["./fixtures/*"],
+      "@utils/*":    ["./utils/*"],
+      "@testdata/*": ["./testdata/*"],
+      "@config/*":   ["./config/*"]
+    }
+  },
+  "include": [
+    "pages/**/*.ts",
+    "fixtures/**/*.ts",
+    "tests/**/*.ts",
+    "utils/**/*.ts",
+    "config/**/*.ts",
+    "playwright.config.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+### `playwright.config.ts`
+Key concepts:
+- `dotenv.config()` loads `config/.env` into `process.env`
+- `envKey` = pointer to which environment to use (QAENV or STAG)
+- `baseURL` = actual URL resolved from the pointer
+- Validation throws clear error if URL is not configured
+- `retries: 2` on CI only — local retries hide flakiness
+- `workers: 1` on CI — avoids resource contention
+- Dual reporters — allure-playwright + html
+
+```typescript
+import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, 'config/.env') });
+
+const envKey: string = process.env['ENV'] ?? 'QAENV';
+const baseURL: string | undefined = process.env[envKey];
+
+if (!baseURL) {
+  throw new Error(`[Config Error] ENV="${envKey}" not defined. Check config/.env`);
+}
+
+console.log(`▶  Environment : ${envKey}`);
+console.log(`▶  Base URL    : ${baseURL}`);
+
+export default defineConfig({
+  testDir: './tests',
+  fullyParallel: true,
+  forbidOnly: !!process.env['CI'],
+  retries: process.env['CI'] ? 2 : 0,
+  workers: process.env['CI'] ? 1 : undefined,
+  reporter: [
+    ['allure-playwright', { outputFolder: 'allure-results' }],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    ['list'],
+  ],
+  use: {
+    baseURL,
+    trace:         'on-first-retry',
+    screenshot:    'only-on-failure',
+    video:         'retain-on-failure',
+    actionTimeout: 15_000,
+    launchOptions: {
+      args: [
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+      ]
+    },
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  },
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox',  use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
+  ],
+});
+```
+
+### `package.json` scripts
+```json
+{
+  "type": "commonjs",
+  "scripts": {
+    "test":             "npx playwright test --headed --project=chromium",
+    "smoke:chrome":     "npx playwright test tests/LoginTest.spec.ts --project=chromium",
+    "smoke:headed":     "npx playwright test tests/LoginTest.spec.ts --headed --project=chromium",
+    "smoke:stag":       "cross-env ENV=STAG npm run smoke:chrome",
+    "regression":       "npx playwright test tests/CategoryTest.spec.ts tests/CourseTest.spec.ts --project=chromium",
+    "regression:stag":  "cross-env ENV=STAG npm run regression",
+    "report:clean":     "rimraf allure-results allure-report",
+    "report:generate":  "allure generate allure-results --clean -o allure-report",
+    "report:open":      "allure open allure-report",
+    "report:pw":        "start playwright-report/index.html",
+    "run:smoke":        "npm run report:clean && npm run smoke:chrome && npm run report:generate && npm run report:open"
+  }
+}
+```
+
+---
+
+## STEP 6 — ENVIRONMENT FILES
+
+### `config/.env` (NEVER commit this file)
+```
+QAENV=https://cygnet.hrinnova.com/Login
+ADMIN_EMAIL=your-email@company.com
+ADMIN_PASSWORD="YourPassword@123"
+```
+
+### `config/.env.example` (Commit this — documents required keys)
+```
+QAENV=https://your-qa-environment.com
+ADMIN_EMAIL=your-admin-email@example.com
+ADMIN_PASSWORD=your-password-here
+```
+
+### `.gitignore` — critical entries
+```
+node_modules/
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/config/.env
+/allure-results/
+/allure-report/
+/reports/
+.DS_Store
+```
+
+---
+
+## STEP 7 — TEST DATA LAYER
+
+### Why we have `types.ts`
+- JSON files only tell TypeScript what the data IS right now
+- Interface defines what the data MUST ALWAYS BE (a contract)
+- If JSON changes and breaks the shape, TypeScript catches it at compile time
+- Enables reuse across factory functions, API responses, page objects
+
+### `testdata/types.ts`
+```typescript
+export interface Credentials {
+  username: string;
+  password: string;
+}
+
+export interface RegistrationData {
+  name:     string;
+  email:    string;
+  password: string;
+  state:    string;
+  hobbies:  string[];
+}
+
+export interface CourseData {
+  courseName:     string;
+  description:    string;
+  instructorName: string;
+  price:          string;
+  category:       string;
+  thumbnail:      string;
+}
+```
+
+### `testdata/credentials.ts` — reads from environment, not JSON
+```typescript
+export const credentials = {
+  username: process.env['ADMIN_EMAIL']    ?? '',
+  password: process.env['ADMIN_PASSWORD'] ?? '',
+}
+
+if (!credentials.username || !credentials.password) {
+  throw new Error('\n[Config Error] ADMIN_EMAIL or ADMIN_PASSWORD not set in config/.env\n')
+}
+```
+
+### Why credentials moved out of JSON into `.env`
+- JSON files committed to git are visible to everyone with repo access
+- Git history is permanent — deleting the file does not remove it from history
+- Bots scan GitHub for committed credentials and exploit within minutes
+- Rule: if you would need to rotate it (change it), it does not belong in git
+
+### `testdata/registration.json`
+```json
+[
+  {
+    "name": "John Doe",
+    "email": "john.doe",
+    "password": "Password@123",
+    "state": "Delhi",
+    "hobbies": ["Playing", "Reading"]
+  }
+]
+```
+
+### `testdata/course.json`
+```json
+{
+  "courseName":     "Playwright Automation",
+  "description":    "End-to-end automation using Playwright.",
+  "instructorName": "Mukesh Otwani",
+  "price":          "2500",
+  "category":       "SQL",
+  "thumbnail":      "testdata/SampleImage.png"
+}
+```
+
+---
+
+## STEP 8 — UTILITIES
+
+### `utils/Helper.ts`
+```typescript
+import * as fs   from 'fs';
+import * as path from 'path';
+
+// Unique email for each test run — avoids duplicate email errors
+export function randomEmail(prefix: string = 'testuser'): string {
+  return `${prefix}_${Date.now()}@email.com`;
+}
+
+// Random number between min and max inclusive
+export function randomNumber(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Read and parse any JSON file with type safety
+export function readJSON<T>(filePath: string): T {
+  const absolutePath = path.resolve(process.cwd(), filePath);
+  const raw = fs.readFileSync(absolutePath, 'utf-8');
+  return JSON.parse(raw) as T;
+}
+
+// Append timestamp to any string — creates unique entity names in tests
+export function withTimestamp(base: string): string {
+  return `${base}_${Date.now()}`;
+}
+```
+
+---
+
+## STEP 9 — PAGE OBJECT LAYER
+
+### Architecture rule
+- `BasePage` = parent class, inherited by ALL page classes
+- Every page class extends BasePage
+- Locators are `private` — only the page's own methods use them
+- Tests never access locators directly — they call methods
+- `BasePage` contains only methods reusable across ALL pages
+
+### `pages/BasePage.ts`
+```typescript
+import { Page, Locator, expect } from '@playwright/test';
+
+export class BasePage {
+  protected readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  // Navigation
+  async goto(path: string): Promise<void> {
+    await this.page.goto(path);
+  }
+
+  async goBack(): Promise<void>    { await this.page.goBack(); }
+  async goForward(): Promise<void> { await this.page.goForward(); }
+  getCurrentURL(): string          { return this.page.url(); }
+
+  // Assertions
+  async assertUrlContains(pattern: string | RegExp): Promise<void> {
+    await expect(this.page).toHaveURL(pattern);
+  }
+
+  async assertURLNotContains(pattern: string | RegExp): Promise<void> {
+    await expect(this.page).not.toHaveURL(pattern);
+  }
+
+  async assertVisible(locator: Locator): Promise<void> {
+    await expect(locator).toBeVisible();
+  }
+
+  async assertNotVisible(locator: Locator): Promise<void> {
+    await expect(locator).not.toBeVisible();
+  }
+
+  async assertText(locator: Locator, text: string): Promise<void> {
+    await expect(locator).toHaveText(text);
+  }
+
+  // Waiting
+  async waitForVisible(locator: Locator, timeout = 10_000): Promise<void> {
+    await locator.waitFor({ state: 'visible', timeout });
+  }
+
+  async wait(ms: number = 2_000): Promise<void> {
+    await this.page.waitForTimeout(ms);
+  }
+
+  // Dialog handling
+  // IMPORTANT: call this BEFORE the action that triggers the dialog
+  registerDialogAccept(responseText: string = ''): void {
+    this.page.once('dialog', async (dialog) => {
+      await dialog.accept(responseText);
+    });
+  }
+
+  registerDialogDismiss(): void {
+    this.page.once('dialog', async (dialog) => {
+      await dialog.dismiss();
+    });
+  }
+
+  // Tab management
+  async switchToMainPage(): Promise<void> {
+    const pages = this.page.context().pages();
+    await this.page.close();
+    await pages[0].bringToFront();
+  }
+
+  // Logout — available from any authenticated page
+  async logout(): Promise<void> {
+    await this.page.getByAltText('menu').click();
+    await this.page.getByText('Sign out', { exact: true }).click();
+  }
+}
+```
+
+### `pages/LoginPage.ts`
+```typescript
+import { Page } from '@playwright/test';
+import { BasePage } from './BasePage';
+
+export class LoginPage extends BasePage {
+  private readonly emailField    = this.page.locator('#email1');
+  private readonly passwordField = this.page.locator('#password1');
+  private readonly loginButton   = this.page.locator('.submit-btn');
+
+  constructor(page: Page) {
+    super(page);
+    // Do NOT add this.page = page — BasePage already sets it
+  }
+
+  async enterEmail(email: string): Promise<void> {
+    await this.emailField.fill(email);    // fill() not type() — type() is deprecated
+  }
+
+  async enterPassword(password: string): Promise<void> {
+    await this.passwordField.fill(password);
+  }
+
+  async clickLoginButton(): Promise<void> {
+    await this.loginButton.click();
+  }
+
+  // Composite action — use when login is a prerequisite not the subject
+  async loginToApplication(email: string, password: string): Promise<void> {
+    await this.emailField.fill(email);
+    await this.passwordField.evaluate(
+      (el) => (el as HTMLInputElement).type = 'password'
+    );
+    await this.passwordField.fill(password);
+    await this.loginButton.click();
+    await this.page.waitForLoadState('networkidle');
+  }
+}
+```
+
+### `pages/DashboardPage.ts`
+```typescript
+import { Page } from '@playwright/test';
+import { BasePage } from './BasePage';
+import { CategoryPage } from './CategoryPage';
+
+export class DashboardPage extends BasePage {
+  private readonly manageMenu           = this.page.getByText('Manage', { exact: true });
+  private readonly manageCoursesLink    = this.page.getByText('Manage Courses', { exact: true });
+  private readonly manageCategoriesLink = this.page.getByText('Manage Categories', { exact: true });
+
+  constructor(page: Page) { super(page); }
+
+  async navigateToManageCourses(): Promise<void> {
+    await this.manageMenu.hover();
+    await this.manageCoursesLink.click();
+  }
+
+  // Returns CategoryPage because this opens a NEW browser tab (popup)
+  // CategoryPage wraps the new tab, not the main page
+  async navigateToManageCategories(): Promise<CategoryPage> {
+    await this.manageMenu.hover();
+    const [newTab] = await Promise.all([
+      this.page.waitForEvent('popup'),
+      this.manageCategoriesLink.click(),
+    ]);
+    await newTab.waitForLoadState('networkidle');
+    return new CategoryPage(newTab);
+  }
+}
+```
+
+### `pages/CategoryPage.ts`
+```typescript
+import { Page } from '@playwright/test';
+import { BasePage } from './BasePage';
+
+export class CategoryPage extends BasePage {
+  private readonly addNewCategoryBtn = this.page.getByText('Add New Category ');
+
+  constructor(page: Page) { super(page); }
+
+  async addCategory(name: string): Promise<void> {
+    this.registerDialogAccept(name);    // Register BEFORE clicking — dialog listener must be ready
+    await this.addNewCategoryBtn.click();
+  }
+
+  async deleteCategory(name: string): Promise<void> {
+    await this.page.locator(`//td[text()='${name}']//following::button[1]`).click();
+    await this.page.locator("//button[text()='Delete']").click();
+  }
+
+  async verifyCategoryVisible(name: string): Promise<void> {
+    await this.assertVisible(this.page.getByText(name, { exact: true }));
+  }
+
+  async verifyCategoryNotVisible(name: string): Promise<void> {
+    await this.assertNotVisible(this.page.getByText(name, { exact: true }));
+  }
+}
+```
+
+---
+
+## STEP 10 — FIXTURES (Dependency Injection)
+
+### What fixtures do
+- Instead of writing `new LoginPage(page)` in every test — fixtures inject it
+- `test.extend()` creates a custom test object with all page objects pre-wired
+- Code BEFORE `await use()` = setup (like beforeEach)
+- Code AFTER `await use()` = teardown (guaranteed to run even if test throws)
+- ALL tests import `test` from fixture.ts — never from `@playwright/test` directly
+
+### Key architectural decision — why categoryPage is NOT a fixture
+- CategoryPage wraps a POPUP TAB, not the main page
+- The popup tab does not exist until after login + navigation
+- Fixtures are resolved BEFORE the test body runs — before login
+- So categoryPage must be created manually in the test body
+- Use `try/finally` in the test for guaranteed popup tab cleanup
+
+### `fixtures/fixture.ts`
+```typescript
+import { test as base, expect } from '@playwright/test';
+import { LoginPage }        from '../pages/LoginPage';
+import { RegistrationPage } from '../pages/RegistrationPage';
+import { DashboardPage }    from '../pages/DashboardPage';
+import { CoursePage }       from '../pages/CoursePage';
+
+type CustomFixtures = {
+  loginPage:        LoginPage;
+  registrationPage: RegistrationPage;
+  dashboardPage:    DashboardPage;
+  coursePage:       CoursePage;
+};
+
+const test = base.extend<CustomFixtures>({
+
+  loginPage: async ({ page }, use) => {
+    await use(new LoginPage(page));
+    // DO NOT call page.close() here
+    // page is shared across all fixtures in the same test
+    // closing it here breaks every other fixture
+  },
+
+  registrationPage: async ({ page }, use) => {
+    await use(new RegistrationPage(page));
+  },
+
+  dashboardPage: async ({ page }, use) => {
+    await use(new DashboardPage(page));
+  },
+
+  coursePage: async ({ page }, use) => {
+    await use(new CoursePage(page));
+  },
+
+});
+
+export { test, expect };
+```
+
+---
+
+## STEP 11 — TESTS
+
+### `tests/LoginTest.spec.ts`
+```typescript
+import { test }        from '../fixtures/fixture';
+import { credentials } from '../testdata/credentials';
+
+test.describe('Login tests', () => {
+
+  test('Login with valid credentials should redirect to Dashboard',
+    async ({ loginPage }) => {
+      await loginPage.goto('/Login');
+      await loginPage.loginToApplication(credentials.username, credentials.password);
+      await loginPage.assertUrlContains(/Dashboard\/Index/);
+  });
+
+});
+```
+
+### `tests/RegistrationTest.spec.ts`
+```typescript
+import { test }             from '../fixtures/fixture';
+import testData             from '../testdata/registration.json';
+import { RegistrationData } from '../testdata/types';
+import { withTimestamp }    from '../utils/Helper';
+
+const registrations = testData as RegistrationData[];
+
+test.describe('User Registration Tests', () => {
+
+  // Data-driven: generates one test per entry in registration.json
+  for (const data of registrations) {
+    test(`Register new user: ${data.name}`, async ({ registrationPage }) => {
+      await registrationPage.goto('/login');
+      await registrationPage.clickNewUser();
+      await registrationPage.enterName(data.name);
+      await registrationPage.enterEmail(withTimestamp(data.email) + '@email.com');
+      await registrationPage.enterPassword(data.password);
+      await registrationPage.selectInterest();
+      await registrationPage.selectGender();
+      await registrationPage.selectState(data.state);
+      await registrationPage.selectHobbies(data.hobbies);
+      await registrationPage.clickSignIn();
+      await registrationPage.assertURLNotContains(/signup/);
+    });
+  }
+
+});
+```
+
+### `tests/CategoryTest.spec.ts`
+```typescript
+import { test }        from '../fixtures/fixture';
+import { credentials } from '../testdata/credentials';
+import { withTimestamp } from '../utils/Helper';
+
+test.describe('Category Management Tests', () => {
+
+  test('Add, verify and delete a new category', async ({ loginPage, dashboardPage }) => {
+    const categoryName = withTimestamp('Playwright');
+
+    await loginPage.goto('/Login');
+    await loginPage.loginToApplication(credentials.username, credentials.password);
+
+    // categoryPage created manually because it wraps a popup tab
+    const categoryPage = await dashboardPage.navigateToManageCategories();
+
+    try {
+      await categoryPage.addCategory(categoryName);
+      await categoryPage.verifyCategoryVisible(categoryName);
+      await categoryPage.deleteCategory(categoryName);
+      await categoryPage.verifyCategoryNotVisible(categoryName);
+    } finally {
+      // finally block = guaranteed cleanup even if test throws
+      if (!categoryPage.page.isClosed()) {
+        await categoryPage.page.close();
+      }
+    }
+
+    await dashboardPage.logout();
+  });
+
+});
+```
+
+---
+
+## STEP 12 — REPORTING
+
+### Two reporters configured
+1. **Playwright HTML** — quick local debugging, shows screenshots/videos/traces
+2. **Allure** — shareable with team, shows history trends and suite breakdown
+
+### Allure is a two-step process
+```
+Run tests → allure-results/ (raw JSON files)
+              ↓
+allure generate → allure-report/ (HTML you can open)
+```
+
+### Commands
+```powershell
+# Run tests + generate + open allure in one command
+npm run run:smoke
+
+# Open Playwright HTML report (no server — direct file)
+start playwright-report/index.html
+
+# If port conflict on show-report
+netstat -ano | findstr :9323
+taskkill /PID <PID_NUMBER> /F
+
+# Type check without compiling
+npx tsc --noEmit
+
+# Run single test file headed
+npx playwright test tests/LoginTest.spec.ts --headed --project=chromium
+
+# Run with Playwright UI mode (best for debugging)
+npx playwright test --ui
+```
+
+---
+
+## STEP 13 — GITHUB ACTIONS CI/CD
+
+### What GitHub Actions is
+- Built-in automation engine inside GitHub
+- Runs automatically when you push code or open a PR
+- Each run gets a fresh virtual machine (Ubuntu) — nothing carries over
+- Free for public repos, limited free minutes for private repos
+- Alternative to Jenkins but zero infrastructure to manage
+
+### Key concepts
+- **Workflow** = the `.yml` file = the pipeline definition
+- **Job** = a group of steps running on one machine
+- **Step** = one command or action
+- **Runner** = the virtual machine that executes the job
+- **Secrets** = encrypted variables stored in GitHub, injected at runtime
+- **Artifacts** = files saved from the machine before it's destroyed
+- `if: always()` = run this step even if previous steps failed
+- `if: failure()` = run this step only when something failed
+
+### Why `config/.env` must be recreated on CI
+- `.env` is in `.gitignore` — it was never pushed to GitHub
+- CI machine starts completely empty
+- The workflow recreates it from GitHub Secrets at runtime
+- Python is used (not bash echo) because bash interprets special characters:
+  - `#` = start of comment → truncates password
+  - `!` = history expansion → corrupts value
+  - `$` = variable expansion → corrupts value
+  - Python writes raw bytes — no interpretation
+
+### GitHub Secrets to add
+Go to: Repo → Settings → Secrets and variables → Actions → New repository secret
+
+| Secret Name | Value |
+|-------------|-------|
+| `QAENV_URL` | `https://cygnet.hrinnova.com/Login` |
+| `ADMIN_EMAIL` | your login email |
+| `ADMIN_PASSWORD` | your password |
+
+### `playwright.yml`
+```yaml
+name: Smoke Tests — Headless Chrome
+
+on:
+  workflow_dispatch:          # Manual trigger button in GitHub UI
+  push:
+    branches: [main]          # Auto-run on push to main
+  pull_request:
+    branches: [main]          # Auto-run on PR to main
+
+jobs:
+  smoke-headless-chrome:
+    runs-on: ubuntu-latest    # Fresh Ubuntu VM each run
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4       # Clone your repo onto the VM
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm                    # Cache node_modules between runs
+
+      - name: Install dependencies
+        run: npm ci                     # Exact install from package-lock.json
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Install Allure CLI
+        run: npm install -g allure-commandline
+
+      - name: Create config env file
+        env:
+          QAENV_URL:      ${{ secrets.QAENV_URL }}
+          ADMIN_EMAIL:    ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          mkdir -p config
+          python3 -c "
+          import os, pathlib
+          pathlib.Path('config/.env').write_text(
+              'QAENV=' + os.environ['QAENV_URL'] + '\n' +
+              'ADMIN_EMAIL=' + os.environ['ADMIN_EMAIL'] + '\n' +
+              'ADMIN_PASSWORD=' + os.environ['ADMIN_PASSWORD'] + '\n'
+          )
+          "
+
+      - name: Verify env file keys only (values never printed)
+        run: |
+          python3 -c "
+          import pathlib
+          for line in pathlib.Path('config/.env').read_text().strip().split('\n'):
+              key, _, val = line.partition('=')
+              print(f'{key} => length: {len(val)}')
+          "
+
+      - name: Run smoke tests
+        run: npm run smoke:chrome
+
+      - name: Generate Allure report
+        if: always()
+        run: allure generate allure-results --clean -o allure-report
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-html-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report/
+          retention-days: 14
+
+      - name: Upload test failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 7
+```
+
+---
+
+## STEP 14 — KNOWN ISSUES AND FIXES
+
+### Issue: `npm ci` fails with lock file mismatch
+```
+npm error lock file's cross-env@10.1.0 does not satisfy cross-env@7.0.3
+```
+**Fix:**
+```powershell
+del package-lock.json
+rmdir /s /q node_modules
+npm install
+git add package.json package-lock.json
+git commit -m "Fix package versions"
+git push
+```
+
+### Issue: `playwright.config.ts` not found
+```
+Cannot find path playwright.config.ts
+```
+**Fix:** Terminal is in wrong directory. Run `pwd` to check, then `cd` to correct folder.
+
+### Issue: Port conflict on `npx playwright show-report`
+```
+Error: listen EADDRINUSE: address already in use ::1:9323
+```
+**Fix:**
+```powershell
+netstat -ano | findstr :9323
+taskkill /PID <PID> /F
+# Or just open directly:
+start playwright-report/index.html
+```
+
+### Issue: `tsconfig.json` errors
+- `"moduleResolution": "node"` → change to `"bundler"`
+- `"baseUrl": "."` → remove this line, add `./` prefix to paths instead
+
+### Issue: Password with special characters truncated on CI
+- `#` in password → bash treats it as comment
+- `!` in password → bash history expansion
+- **Fix:** Use Python to write `.env` file — bypasses all bash interpretation
+
+### Issue: GitHub Actions failing but local passing
+**Possible causes:**
+1. Wrong directory in terminal (most common)
+2. `.env` file not created correctly on CI
+3. IP restriction — corporate app not accessible from Azure IPs
+4. Headless browser detection by the application
+
+### Issue: Credentials visible in Allure report
+- Never `console.log` credentials
+- Never pass credentials as test titles
+- Use `fill()` not `type()` — fill does not log values
+
+---
+
+## STEP 15 — SELF-HOSTED RUNNER (for corporate apps)
+
+If the target website is internal/behind VPN, GitHub's hosted runners
+(on Azure) cannot reach it. Solution: self-hosted runner on your machine.
+
+```powershell
+# Create runner folder
+mkdir C:\actions-runner
+cd C:\actions-runner
+
+# Follow instructions from:
+# Repo → Settings → Actions → Runners → New self-hosted runner
+# Copy and run the commands GitHub shows you
+
+# Start the runner
+.\run.cmd
+```
+
+Then change one line in `playwright.yml`:
+```yaml
+# Change this:
+runs-on: ubuntu-latest
+
+# To this:
+runs-on: self-hosted
+```
+
+Now GitHub sends jobs to YOUR machine which is inside the network.
+
+---
+
+## ARCHITECTURAL DECISIONS EXPLAINED
+
+### Why TypeScript over JavaScript
+- Catches bugs at compile time not runtime
+- `strict: true` prevents null/undefined errors
+- Interfaces enforce data shapes — JSON drift caught immediately
+- Better IDE autocomplete and refactoring support
+
+### Why Fixtures over beforeEach
+- `beforeEach` with `new LoginPage(page)` repeated in every test = duplication
+- Fixtures inject page objects automatically — tests just declare what they need
+- Teardown in fixture is GUARANTEED — `afterEach` can be skipped if test panics
+- Type-safe — TypeScript knows exactly what each fixture provides
+
+### Why BasePage
+- DRY principle — `goto`, `assertVisible`, `waitForVisible` written once
+- All pages inherit a full toolkit
+- Change behavior in one place — affects all pages
+- Beginners skip this and duplicate Playwright calls across every page
+
+### Why separate `types.ts`
+- JSON auto-inference is not a contract
+- Interface is the contract — protects against shape changes
+- One definition reused across tests, factories, API responses
+- Documents required vs optional fields explicitly
+
+### Why `cross-env` for npm scripts
+- `ENV=STAG command` is Linux/Mac only
+- On Windows it silently fails — tests run against wrong environment
+- `cross-env ENV=STAG command` works on all operating systems
+
+### Why `npm ci` not `npm install` on CI
+- `npm install` can update versions, causing non-reproducible builds
+- `npm ci` installs exactly what is in `package-lock.json` — guaranteed reproducibility
+- Faster on CI because it skips dependency resolution
+
+---
+
+## QUICK REFERENCE — ALL COMMANDS
+
+```powershell
+# Type check
+npx tsc --noEmit
+
+# Run all tests headed Chrome
+npx playwright test --headed --project=chromium
+
+# Run one test file
+npx playwright test tests/LoginTest.spec.ts --headed --project=chromium
+
+# Run smoke suite headless
+npm run smoke:chrome
+
+# Run smoke suite against staging
+npm run smoke:stag
+
+# Full run with allure report
+npm run run:smoke
+
+# Open Playwright HTML report
+start playwright-report/index.html
+
+# Generate allure report
+npm run report:generate
+
+# Open allure report
+npm run report:open
+
+# Playwright UI mode (best for debugging)
+npx playwright test --ui
+
+# Generate locators interactively
+npx playwright codegen https://cygnet.hrinnova.com/Login
+
+# Show trace for failed test
+npx playwright show-trace test-results/<folder>/trace.zip
+
+# Install allure globally
+npm install -g allure-commandline
+
+# Check allure version
+allure --version
+
+# Git — push changes
+git add .
+git commit -m "your message"
+git push
+```

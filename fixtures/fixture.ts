@@ -1,6 +1,7 @@
 import{test as base,expect} from '@playwright/test'
-
+import { credentials } from '@testdata/credentials';
 import { LoginPage }        from '../pages/LoginPage';
+import { DashboardPage } from '@pages/DashboardPage';
 /**
  * Type definition for all custom fixtures.
  * TypeScript enforces that every fixture used in tests matches this shape.
@@ -9,6 +10,7 @@ import { LoginPage }        from '../pages/LoginPage';
 
 type CustomFixtures = {
   loginPage: LoginPage;
+  dashboardPage: DashboardPage;
 };
 
 /**
@@ -25,7 +27,7 @@ type CustomFixtures = {
  *   critical advantage over putting cleanup in the test body with try/finally.
  */
 
-const test= base.extend<CustomFixtures>({
+export const test= base.extend<CustomFixtures>({
     // ---loginPage ---
   loginPage: async ({ page }, use) => {
     // `page` here is the Playwright-managed Page for this test worker.
@@ -34,6 +36,19 @@ const test= base.extend<CustomFixtures>({
     // No teardown needed — Playwright manages the page lifecycle via browser context.
     // NEVER call page.close() here — it closes the shared page used by ALL fixtures.
   },
+  dashboardPage: async ({page},use)=>{
+    const loginpage= new LoginPage(page);
+    await loginpage.goto('/login'); 
+     const dashboardPage =
+    await loginpage.loginToApplication(
+      credentials.username,
+      credentials.password
+    );
+    await use(dashboardPage);
+  }
+
+  
+
 
 
 
@@ -71,4 +86,4 @@ const test= base.extend<CustomFixtures>({
 })
 
 // Export both test and expect — tests import from here, never from @playwright/test directly
-export { test, expect };
+export {  expect };

@@ -1,5 +1,6 @@
 import { Page, Locator } from '@playwright/test';
 import {BasePage} from './BasePage'
+import { DashboardPage } from './DashboardPage';
 
 export class LoginPage extends BasePage {
     // Locators are private — only this class's methods should interact with them.
@@ -37,15 +38,11 @@ export class LoginPage extends BasePage {
    * Use this in tests where login is a prerequisite, not the subject under test.
    * Use the atomic methods above when the test IS testing login behaviour.
    */
-    async loginToApplication(email: string, password: string): Promise<void> {
+    async loginToApplication(email: string, password: string): Promise<DashboardPage> {
         await this.usernameField.fill(email);
         await this.passwordField.fill(password);
-        await this.page.waitForTimeout(4000);
         await this.loginbutton.click();
+        return new DashboardPage(this.page);
     }
-
-
-
-
 }
 

@@ -41,7 +41,7 @@ export  class BasePage {
     async goForward():Promise<void>{
         await this.page.goForward();
     }
-    async getCurrentURL() : Promise<String>{
+    async getCurrentURL() : Promise<string>{
         return this.page.url();
     }
     async getCurrentTitle(): Promise<string> {
