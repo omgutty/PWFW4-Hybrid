@@ -1,6 +1,7 @@
 import { Page,Locator ,expect} from "@playwright/test";
 import { BasePage } from "./BasePage";
 import { MyprofilePage } from './MyprofilePage';
+import{TimesheetPage} from './TimesheetPage';
 
 export class DashboardPage extends BasePage{
     private readonly dashboardlogo= this.page.getByText('Logo');
@@ -10,6 +11,8 @@ export class DashboardPage extends BasePage{
     private readonly dashboardHeader = this.page.getByRole('heading', { name: 'Dashboard' });
     private readonly profilelink= this.page.locator('img.img-responsive.profile-thumb.img-thumbnail');
     private readonly myprofile= this.page.locator('a').filter({ hasText: 'My Profile' }).first();
+    private readonly addTimesheetBtn= this.page.locator('#lnkTimesheet');
+
 
     constructor (page:Page){
         super(page);
@@ -47,7 +50,15 @@ export class DashboardPage extends BasePage{
        return new MyprofilePage(this.page);
     }
     
-
+/**
+   * Clicks AddTimesheet button, waits for new tab, returns TimesheetPage.
+   * The caller receives a fully loaded TimesheetPage ready to interact with.
+   * No tab management needed in the test — it is handled here.
+   */
+  async navigateToAddTimesheet(): Promise<TimesheetPage> {
+    const newTab = await this.clickAndWaitForNewTab(this.addTimesheetBtn);
+    return new TimesheetPage(newTab);
+  }
     
 
 

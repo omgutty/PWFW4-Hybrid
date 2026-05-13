@@ -22,4 +22,9 @@ test('Navigating to Myprofile from dashboardpage', async  ({dashboardPage})=>{
     await loginpage.validateTitle();
 });
 
+test('verify navigation to timesheetpage', async({dashboardPage})=>{
+    const timesheetpage= await dashboardPage.navigateToAddTimesheet()
+    await timesheetpage.verifyTitleOfTimeSheetpage();
+})
+
 

@@ -143,6 +143,29 @@ export  class BasePage {
         return new LoginPage(this.page);
     }
 
+    /**
+   * Clicks a locator that opens a new browser tab and returns the new Page.
+   * Use this in any page class where a button/link opens a popup tab.
+   *
+   * Usage in a page class:
+   *   const newTab = await this.clickAndWaitForNewTab(this.addTimesheetBtn);
+   *   return new TimesheetPage(newTab);
+   *
+   * Why this lives in BasePage:
+   *   Multiple pages open new tabs (Dashboard, Reports, Admin etc.)
+   *   Writing Promise.all + waitForEvent in every page class is duplication.
+   *   One method here serves all of them.
+   */
+
+    protected async clickAndWaitForNewTab(locator: Locator): Promise<Page> {
+    const [newTab] = await Promise.all([
+      this.page.context().waitForEvent('page'),  // wait for new tab
+      locator.click(),                            // trigger the click
+    ]);
+    await newTab.waitForLoadState('networkidle'); // wait for page to fully load
+    return newTab;
+  }
+
 
 }
 
