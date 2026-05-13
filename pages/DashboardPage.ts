@@ -1,5 +1,6 @@
 import { Page,Locator ,expect} from "@playwright/test";
 import { BasePage } from "./BasePage";
+import { MyprofilePage } from './MyprofilePage';
 
 export class DashboardPage extends BasePage{
     private readonly dashboardlogo= this.page.getByText('Logo');
@@ -7,6 +8,8 @@ export class DashboardPage extends BasePage{
     private readonly paidleave= this.page.locator(".count paid-leave-bg cursor-pointer");
     private readonly emptyleave= this.page.locator(".count empthy-leave-bg cursor-pointer");
     private readonly dashboardHeader = this.page.getByRole('heading', { name: 'Dashboard' });
+    private readonly profilelink= this.page.locator('img.img-responsive.profile-thumb.img-thumbnail');
+    private readonly myprofile= this.page.locator('a').filter({ hasText: 'My Profile' }).first();
 
     constructor (page:Page){
         super(page);
@@ -37,6 +40,12 @@ export class DashboardPage extends BasePage{
     async emptyleavenumber():Promise<string|null>{{
        return await this.emptyleave.textContent();
     }}
+
+    async clickOnMyProfile():Promise<MyprofilePage>{
+       await  this.profilelink.click();
+       await this.myprofile.click()
+       return new MyprofilePage(this.page);
+    }
     
 
     

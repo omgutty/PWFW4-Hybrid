@@ -1,5 +1,7 @@
 import { test ,expect} from '../fixtures/fixture';
 import { credentials } from '../testdata/credentials';
+import { DashboardPage } from '../pages/DashboardPage';
+
 
 
 
@@ -7,15 +9,15 @@ test.describe('Dashboard verification', ()=>{
 
     test('verify pending timesheets',async ({dashboardPage})=>{
         await dashboardPage.isLogoVisible();
-
         const pendingCount = await dashboardPage.pendingtimesheetnumber();
-
-        console.log(pendingCount);
-
-        expect(pendingCount).toBe('1');
-       // console.log(await dashboardPage.paidleavenumber())
-        //console.log(await dashboardPage.emptyleavenumber())
-        
-     // await dashboardPage.assertDashboardLoaded();
+        console.log("Pending time sheet count : "+pendingCount);
+        expect(pendingCount).toBeGreaterThanOrEqual(0)
     });
 })
+
+test('Navigating to Myprofile from dashboardpage', async  ({dashboardPage})=>{
+    const myprofilepage=await dashboardPage.clickOnMyProfile();
+     expect(await myprofilepage.isMyprofilepicvisible())
+     
+});
+

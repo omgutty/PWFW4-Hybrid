@@ -26,12 +26,12 @@ npm install --save-dev @types/node
 
 
 Pending -TODO
-- Report integration 
-- Logger implimentation 
+- Report integration - DONE
+- Logger implimentation - DONE
 - Script path adding for running - DONE
-- Environment URL separattion 
+- Environment URL separattion  
 - git ignor the Base  URL is it safe ? 
 - how jenkins will get the URL if we are ignoring the Base URL ?
-- GitHub Actions run 
-- Allure reporter
+- GitHub Actions run - DONE
+- Allure reporter - DONE
 - Multiple pages and page navigations

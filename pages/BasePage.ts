@@ -137,8 +137,8 @@ export  class BasePage {
    * If different pages have different logout flows, override this method in that subclass.
    */
     async logout(): Promise<void> {
-        await this.page.getByAltText('menu').click();
-        await this.page.getByText('Sign out', { exact: true }).click();
+        await this.page.locator('img.img-responsive.profile-thumb.img-thumbnail').click();
+        await this.page.getByText('Logout', { exact: true }).click();
     }
 
 
