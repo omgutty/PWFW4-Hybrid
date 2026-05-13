@@ -10,7 +10,7 @@ export class MyprofilePage extends BasePage{
     }
 
     async isMyprofilepicvisible(): Promise<boolean> {
-        this.page.waitForTimeout(2000);//hard coded wait for 2 seconds
+        await this.myprofilepic.waitFor();
         return await this.myprofilepic.isVisible();
     }
 
