@@ -17,7 +17,6 @@ test.describe('Dashboard verification', ()=>{
 
 test('Navigating to Myprofile from dashboardpage', async  ({dashboardPage})=>{
     const myprofilepage=await dashboardPage.clickOnMyProfile();
-     expect(await myprofilepage.isMyprofilepicvisible())
-     
+    await myprofilepage.validateMyProfilePageLoaded();     
 });
 

@@ -9,10 +9,9 @@ export class MyprofilePage extends BasePage{
         super(page);
     }
 
-    async isMyprofilepicvisible(): Promise<boolean> {
-        await this.myprofilepic.waitFor();
-        return await this.myprofilepic.isVisible();
-    }
+   async validateMyProfilePageLoaded() {
+    await expect(this.myprofilepic).toBeVisible();
+}
 
 
 }
