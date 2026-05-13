@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import {BasePage} from './BasePage'
 import { DashboardPage } from './DashboardPage';
 
@@ -43,6 +43,11 @@ export class LoginPage extends BasePage {
         await this.passwordField.fill(password);
         await this.loginbutton.click();
         return new DashboardPage(this.page);
+    }
+
+    async validateTitle(){
+       const loginpagetitle=await this.page.title()
+       expect(loginpagetitle).toContain('Login');
     }
 }
 

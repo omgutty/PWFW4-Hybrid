@@ -17,6 +17,9 @@ test.describe('Dashboard verification', ()=>{
 
 test('Navigating to Myprofile from dashboardpage', async  ({dashboardPage})=>{
     const myprofilepage=await dashboardPage.clickOnMyProfile();
-    await myprofilepage.validateMyProfilePageLoaded();     
+    await myprofilepage.validateMyProfilePageLoaded(); 
+    const loginpage=await myprofilepage.logout();  
+    await loginpage.validateTitle();
 });
+
 

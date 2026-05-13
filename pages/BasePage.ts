@@ -1,4 +1,5 @@
 import {Page,Locator,expect} from '@playwright/test';
+import { LoginPage } from './LoginPage';
 
 
 
@@ -136,9 +137,10 @@ export  class BasePage {
    * Placed on BasePage because logout is available from any authenticated page.
    * If different pages have different logout flows, override this method in that subclass.
    */
-    async logout(): Promise<void> {
+    async logout(): Promise<LoginPage> {
         await this.page.locator('img.img-responsive.profile-thumb.img-thumbnail').click();
         await this.page.getByText('Logout', { exact: true }).click();
+        return new LoginPage(this.page);
     }
 
 
