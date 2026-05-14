@@ -11,7 +11,7 @@ export class DashboardPage extends BasePage{
     private readonly dashboardHeader = this.page.getByRole('heading', { name: 'Dashboard' });
     private readonly profilelink= this.page.locator('img.img-responsive.profile-thumb.img-thumbnail');
     private readonly myprofile= this.page.locator('a').filter({ hasText: 'My Profile' }).first();
-    private readonly addTimesheetBtn= this.page.locator('#lnkTimesheet');
+    private readonly addTimesheetBtn= this.page.locator('#lnkTimesheet').last();
 
 
     constructor (page:Page){
