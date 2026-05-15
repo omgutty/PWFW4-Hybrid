@@ -1,6 +1,6 @@
 import { Page,Locator ,expect} from "@playwright/test";
-import { BasePage } from "./BasePage";
-import { MyprofilePage } from './MyprofilePage';
+import { BasePage } from "@pages/BasePage";
+import { MyprofilePage } from "@pages/MyprofilePage";
 import{TimesheetPage} from './TimesheetPage';
 
 export class DashboardPage extends BasePage{
